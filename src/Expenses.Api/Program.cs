@@ -24,13 +24,13 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapGet("/expense/{id}", async Task<Results<Ok<Expense>, NotFound>> (Guid id, ExpenseDbContext db) =>
+app.MapGet("/expenses/{id}", async Task<Results<Ok<Expense>, NotFound>> (Guid id, ExpenseDbContext db) =>
    await db.Expenses.FindAsync(id) is Expense expense
          ? TypedResults.Ok(expense)
          : TypedResults.NotFound())
     .WithName("GetExpenseById");
 
-app.MapPost("/expense", 
+app.MapPost("/expenses", 
     async Task<CreatedAtRoute<Expense>> (CreateExpense expense, ExpenseDbContext db) => 
 
 {
