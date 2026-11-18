@@ -44,7 +44,7 @@ app.MapPost("/expense",
     db.Expenses.Add(created);
     await db.SaveChangesAsync();
 
-    return TypedResults.CreatedAtRoute(created, "ByExpenseById", new { id = created.Id  });
+    return TypedResults.CreatedAtRoute(created, "GetExpenseById", new { id = created.Id  });
 });
 
 if (app.Environment.IsDevelopment())
