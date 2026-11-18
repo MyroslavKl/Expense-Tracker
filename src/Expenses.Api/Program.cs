@@ -2,12 +2,13 @@ using Expenses.Api.Data;
 using Expenses.Api.Models;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddDbContext<ExpenseDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ExpensesDb")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("ExpensesDb"))
+           .UseSnakeCaseNamingConvention());
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("ExpensesDb")!, name: "postgres")
@@ -23,14 +24,15 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapGet("/get-expense", async Task<Expense?> (Guid id, ExpenseDbContext db) => 
-{
-    var expense = await db.Expenses.FirstOrDefaultAsync(obj => obj.Id == id);
+app.MapGet("/get-expense", async Task<Results<Ok<Expense>, NotFound>> (Guid id, ExpenseDbContext db) =>
+   await db.Expenses.FindAsync(id) is Expense expense
+         ? TypedResults.Ok(expense)
+         : TypedResults.NotFound())
+    .WithName("GetExpenseById");
 
-    return expense;
-});
+app.MapPost("/create-expense", 
+    async Task<CreatedAtRoute<Expense>> (CreateExpense expense, ExpenseDbContext db) => 
 
-app.MapPost("/create-expense", async Task<Expense> (CreateExpense expense, ExpenseDbContext db) => 
 {
     var created = new Expense
     {
@@ -42,7 +44,7 @@ app.MapPost("/create-expense", async Task<Expense> (CreateExpense expense, Expen
     db.Expenses.Add(created);
     await db.SaveChangesAsync();
 
-    return created;
+    return TypedResults.CreatedAtRoute(created, "ByExpenseById", new { id = created.Id  });
 });
 
 if (app.Environment.IsDevelopment())
@@ -55,5 +57,5 @@ app.UseHttpsRedirection();
 app.Run();
 
 
-public record CreateExpense(decimal amount, string description, DateTime expenseDate);
+public record CreateExpense(decimal amount, string description, DateOnly expenseDate);
 
