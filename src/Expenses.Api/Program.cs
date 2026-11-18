@@ -24,21 +24,21 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapGet("/get-expense", async Task<Results<Ok<Expense>, NotFound>> (Guid id, ExpenseDbContext db) =>
+app.MapGet("/expense/{id}", async Task<Results<Ok<Expense>, NotFound>> (Guid id, ExpenseDbContext db) =>
    await db.Expenses.FindAsync(id) is Expense expense
          ? TypedResults.Ok(expense)
          : TypedResults.NotFound())
     .WithName("GetExpenseById");
 
-app.MapPost("/create-expense", 
+app.MapPost("/expense", 
     async Task<CreatedAtRoute<Expense>> (CreateExpense expense, ExpenseDbContext db) => 
 
 {
     var created = new Expense
     {
-        Amount = expense.amount,
-        Description = expense.description,
-        ExpenseDate = expense.expenseDate
+        Amount = expense.Amount,
+        Description = expense.Description,
+        ExpenseDate = expense.ExpenseDate
     };
 
     db.Expenses.Add(created);
@@ -57,5 +57,5 @@ app.UseHttpsRedirection();
 app.Run();
 
 
-public record CreateExpense(decimal amount, string description, DateOnly expenseDate);
+public record CreateExpense(decimal Amount, string Description, DateOnly ExpenseDate);
 
